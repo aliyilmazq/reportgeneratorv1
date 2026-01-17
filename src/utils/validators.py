@@ -23,10 +23,41 @@ from .exceptions import (
 _config = None
 
 def _get_config():
+    """Config'i guvenli sekilde yukle."""
     global _config
     if _config is None:
-        from ..config.constants import CONFIG
-        _config = CONFIG
+        try:
+            from ..config.constants import CONFIG
+            _config = CONFIG
+        except (ImportError, ValueError):
+            # Fallback: Test veya standalone kullanim icin
+            class DefaultConfig:
+                class security:
+                    ALLOWED_BASE_DIR = Path.cwd()
+                    MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+                    BLOCKED_DOMAINS = ["localhost", "127.0.0.1", "0.0.0.0"]
+                    BLOCKED_EXTENSIONS = [".exe", ".bat", ".sh", ".ps1"]
+                    FORBIDDEN_PATH_PATTERNS = [
+                        r'\.\.',
+                        r'\.\./',
+                        r'/\.\.',
+                        r'\\\.\\.',
+                    ]
+                    INJECTION_PATTERNS = [
+                        r'ignore\s+(previous|all|above)',
+                        r'forget\s+(previous|all|your)',
+                        r'disregard\s+(previous|all|above)',
+                        r'override\s+(instructions|rules)',
+                        r'new\s+instructions?:',
+                        r'system\s*:\s*',
+                        r'<\s*system\s*>',
+                        r'</?\s*(?:script|style|iframe)',
+                    ]
+                class limits:
+                    URL_MAX_LENGTH = 2048
+                    TEXT_MAX_LENGTH = 100000
+                    FILE_MAX_SIZE = 100 * 1024 * 1024
+            _config = DefaultConfig()
     return _config
 
 

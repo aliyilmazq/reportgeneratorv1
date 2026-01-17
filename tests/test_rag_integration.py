@@ -65,8 +65,8 @@ class TestBM25Index:
         from src.rag.bm25_index import BM25Index
 
         index = BM25Index()
-        texts = [doc["text"] for doc in sample_documents]
-        index.build_index(texts)
+        # BM25Index expects list of dicts with "text" key
+        index.build_index(sample_documents)
 
         results = index.search("büyüme", top_k=3)
 

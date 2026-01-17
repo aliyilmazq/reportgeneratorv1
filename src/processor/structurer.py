@@ -22,9 +22,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 try:
     from utils.validators import TextValidator
     from utils.exceptions import PromptInjectionError
+    from utils.retry_helper import retry_with_backoff, retry_api_call
+    HAS_RETRY = True
 except ImportError:
     TextValidator = None
     PromptInjectionError = Exception
+    HAS_RETRY = False
 
 logger = logging.getLogger(__name__)
 
@@ -273,19 +276,29 @@ class ReportStructurer:
             report_type=report_type
         )
 
-        # Claude'dan içerik al
+        # Claude'dan içerik al - retry logic ile
         try:
-            response = self.client.messages.create(
-                model="claude-opus-4-5-20250514",
-                max_tokens=8000,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
+            if HAS_RETRY:
+                # Retry ile API cagir
+                response = retry_api_call(
+                    self.client.messages.create,
+                    model="claude-opus-4-5-20250514",
+                    max_tokens=8000,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_attempts=3
+                )
+            else:
+                # Fallback: retry olmadan
+                response = self.client.messages.create(
+                    model="claude-opus-4-5-20250514",
+                    max_tokens=8000,
+                    messages=[{"role": "user", "content": prompt}]
+                )
 
             content = response.content[0].text
 
         except Exception as e:
+            logger.error(f"Claude API hatasi: {e}")
             content = f"[Bu bölüm oluşturulurken hata oluştu: {str(e)}]"
 
         return ReportSection(

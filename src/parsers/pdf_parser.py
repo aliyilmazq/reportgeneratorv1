@@ -1,19 +1,29 @@
 """PDF dosya okuyucu modülü."""
 
 import io
+import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union, Iterator
 from dataclasses import dataclass, field
 
 try:
     import pdfplumber
+    from pdfplumber.pdf import PDF as PdfPlumberPDF
 except ImportError:
     pdfplumber = None
+    PdfPlumberPDF = None
 
 try:
     import fitz  # PyMuPDF
+    from fitz import Document as FitzDocument
 except ImportError:
     fitz = None
+    FitzDocument = None
+
+# Type alias
+PathLike = Union[str, Path]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -22,6 +32,26 @@ class PDFTable:
     page_number: int
     data: List[List[str]]
     headers: List[str] = field(default_factory=list)
+
+    @property
+    def row_count(self) -> int:
+        """Satir sayisi."""
+        return len(self.data)
+
+    @property
+    def column_count(self) -> int:
+        """Sutun sayisi."""
+        return len(self.headers) if self.headers else (len(self.data[0]) if self.data else 0)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Dict'e cevir."""
+        return {
+            "page_number": self.page_number,
+            "headers": self.headers,
+            "data": self.data,
+            "row_count": self.row_count,
+            "column_count": self.column_count
+        }
 
 
 @dataclass
@@ -33,6 +63,11 @@ class PDFImage:
     height: int
     format: str
 
+    @property
+    def size_bytes(self) -> int:
+        """Gorsel boyutu (byte)."""
+        return len(self.image_data)
+
 
 @dataclass
 class PDFPage:
@@ -41,6 +76,16 @@ class PDFPage:
     text: str
     tables: List[PDFTable] = field(default_factory=list)
     images: List[PDFImage] = field(default_factory=list)
+
+    @property
+    def word_count(self) -> int:
+        """Kelime sayisi."""
+        return len(self.text.split())
+
+    @property
+    def has_content(self) -> bool:
+        """Icerik var mi."""
+        return bool(self.text.strip() or self.tables or self.images)
 
 
 @dataclass
@@ -53,18 +98,76 @@ class PDFContent:
     metadata: Dict[str, Any] = field(default_factory=dict)
     full_text: str = ""
 
+    @property
+    def word_count(self) -> int:
+        """Toplam kelime sayisi."""
+        return len(self.full_text.split())
+
+    @property
+    def all_tables(self) -> List[PDFTable]:
+        """Tum tablolar."""
+        tables: List[PDFTable] = []
+        for page in self.pages:
+            tables.extend(page.tables)
+        return tables
+
+    @property
+    def all_images(self) -> List[PDFImage]:
+        """Tum gorseller."""
+        images: List[PDFImage] = []
+        for page in self.pages:
+            images.extend(page.images)
+        return images
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Dict'e cevir."""
+        return {
+            "source": self.source,
+            "filename": self.filename,
+            "page_count": self.page_count,
+            "word_count": self.word_count,
+            "table_count": len(self.all_tables),
+            "image_count": len(self.all_images),
+            "metadata": self.metadata
+        }
+
 
 class PDFParser:
     """PDF dosya okuyucu sınıfı."""
 
-    def __init__(self, extract_images: bool = True, extract_tables: bool = True):
-        self.extract_images = extract_images
-        self.extract_tables = extract_tables
+    def __init__(
+        self,
+        extract_images: bool = True,
+        extract_tables: bool = True
+    ) -> None:
+        self.extract_images: bool = extract_images
+        self.extract_tables: bool = extract_tables
+        self._current_doc: Optional[Any] = None
+        self._closed: bool = False
 
         if pdfplumber is None:
             raise ImportError("pdfplumber kütüphanesi yüklü değil. 'pip install pdfplumber' komutunu çalıştırın.")
 
-    def parse(self, file_path: str) -> PDFContent:
+    def __enter__(self) -> 'PDFParser':
+        """Context manager entry."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any]
+    ) -> bool:
+        """Context manager exit - acik dosyalari kapat."""
+        self.close()
+        return False
+
+    def close(self) -> None:
+        """Acik kaynaklari temizle."""
+        self._current_doc = None
+        self._closed = True
+
+    def parse(self, file_path: PathLike) -> PDFContent:
         """PDF dosyasını oku ve içeriği çıkar."""
         file_path = Path(file_path)
 

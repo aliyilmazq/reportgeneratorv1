@@ -2,12 +2,15 @@
 
 import os
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Callable, Iterator, ClassVar
 from dataclasses import dataclass, field
 from datetime import datetime
 
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+
+# Type imports
+from .types import FileCategory, PathLike, ProgressCallback
 
 console = Console()
 
@@ -19,8 +22,30 @@ class FileInfo:
     name: str
     extension: str
     size: int
-    category: str  # 'pdf', 'excel', 'word', 'image'
+    category: FileCategory
     modified_time: datetime
+
+    @property
+    def size_formatted(self) -> str:
+        """Okunabilir boyut."""
+        size = self.size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024:
+                return f"{size:.1f} {unit}"
+            size /= 1024
+        return f"{size:.1f} TB"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Dict'e cevir."""
+        return {
+            "path": self.path,
+            "name": self.name,
+            "extension": self.extension,
+            "size": self.size,
+            "size_formatted": self.size_formatted,
+            "category": self.category.value if isinstance(self.category, FileCategory) else self.category,
+            "modified_time": self.modified_time.isoformat()
+        }
 
 
 @dataclass
@@ -29,39 +54,65 @@ class ScanResult:
     files: List[FileInfo] = field(default_factory=list)
     stats: Dict[str, int] = field(default_factory=dict)
     total_size: int = 0
-    scan_time: float = 0
+    scan_time: float = 0.0
+
+    @property
+    def total_files(self) -> int:
+        """Toplam dosya sayisi."""
+        return len(self.files)
+
+    def get_files_by_category(self, category: FileCategory) -> List[FileInfo]:
+        """Kategoriye gore dosyalari filtrele."""
+        cat_value = category.value if isinstance(category, FileCategory) else category
+        return [f for f in self.files if f.category == cat_value or
+                (isinstance(f.category, FileCategory) and f.category.value == cat_value)]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Dict'e cevir."""
+        return {
+            "files": [f.to_dict() for f in self.files],
+            "stats": self.stats,
+            "total_size": self.total_size,
+            "total_files": self.total_files,
+            "scan_time": self.scan_time
+        }
 
 
 class FileScanner:
     """Dosya tarayıcı sınıfı."""
 
-    EXTENSIONS = {
+    # Class-level type annotation
+    EXTENSIONS: ClassVar[Dict[str, List[str]]] = {
         'pdf': ['.pdf'],
         'excel': ['.xlsx', '.xls', '.csv'],
         'word': ['.docx', '.doc'],
         'image': ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp']
     }
 
-    def __init__(self):
-        self.console = console
+    def __init__(self, console_instance: Optional[Console] = None) -> None:
+        self.console: Console = console_instance or console
         # Uzantıdan kategoriye map
-        self._ext_to_category = {}
+        self._ext_to_category: Dict[str, str] = {}
         for category, extensions in self.EXTENSIONS.items():
             for ext in extensions:
                 self._ext_to_category[ext] = category
 
     def get_supported_extensions(self) -> List[str]:
         """Desteklenen tüm uzantıları döndür."""
-        extensions = []
+        extensions: List[str] = []
         for ext_list in self.EXTENSIONS.values():
             extensions.extend(ext_list)
         return extensions
 
-    def get_category(self, extension: str) -> str:
+    def get_category(self, extension: str) -> FileCategory:
         """Uzantıdan kategori al."""
-        return self._ext_to_category.get(extension.lower(), 'unknown')
+        cat_str = self._ext_to_category.get(extension.lower(), 'unknown')
+        try:
+            return FileCategory(cat_str)
+        except ValueError:
+            return FileCategory.UNKNOWN
 
-    def scan(self, input_path: str, show_progress: bool = True) -> ScanResult:
+    def scan(self, input_path: PathLike, show_progress: bool = True) -> ScanResult:
         """Klasörü tara ve desteklenen dosyaları bul."""
         import time
         start_time = time.time()
@@ -157,17 +208,23 @@ class FileScanner:
 
         return result
 
-    def get_files_by_category(self, result: ScanResult, category: str) -> List[FileInfo]:
+    def get_files_by_category(
+        self,
+        result: ScanResult,
+        category: FileCategory
+    ) -> List[FileInfo]:
         """Belirli kategorideki dosyaları al."""
-        return [f for f in result.files if f.category == category]
+        return result.get_files_by_category(category)
 
-    def format_size(self, size_bytes: int) -> str:
+    @staticmethod
+    def format_size(size_bytes: int) -> str:
         """Boyutu okunabilir formata çevir."""
+        size: float = float(size_bytes)
         for unit in ['B', 'KB', 'MB', 'GB']:
-            if size_bytes < 1024:
-                return f"{size_bytes:.1f} {unit}"
-            size_bytes /= 1024
-        return f"{size_bytes:.1f} TB"
+            if size < 1024:
+                return f"{size:.1f} {unit}"
+            size /= 1024
+        return f"{size:.1f} TB"
 
     def print_summary(self, result: ScanResult):
         """Tarama özetini yazdır."""

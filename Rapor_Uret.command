@@ -6,8 +6,10 @@
 # Klasöre git
 cd "$(dirname "$0")"
 
-# API Anahtarı - Kendi anahtarınızı buraya girin veya .env dosyasında tanımlayın
-# export ANTHROPIC_API_KEY='your-api-key-here'
+# .env dosyasından API anahtarını yükle
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
 
 # Terminal başlığı
 echo "╔══════════════════════════════════════════════════════════════╗"

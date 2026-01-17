@@ -1,6 +1,10 @@
 """Hybrid Retriever Modulu - BM25 + Semantic + Reranking."""
 
-from typing import List, Dict, Any, Optional, Tuple
+import logging
+from typing import (
+    List, Dict, Any, Optional, Tuple, Union, Callable,
+    Sequence, Iterator, ClassVar
+)
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -12,7 +16,12 @@ from .reranker import CrossEncoderReranker, MMRReranker
 from .vector_store import VectorStore
 from .cache_manager import QueryCache, EmbeddingCache
 
+logger = logging.getLogger(__name__)
 console = Console()
+
+# Type aliases
+DocumentDict = Dict[str, Any]
+ScoreFloat = float
 
 
 @dataclass
@@ -48,22 +57,44 @@ class HybridSearchConfig:
 class HybridResult:
     """Hybrid arama sonucu."""
     text: str
-    score: float
-    semantic_score: float
-    bm25_score: float
-    rerank_score: Optional[float]
+    score: ScoreFloat
+    semantic_score: ScoreFloat
+    bm25_score: ScoreFloat
+    rerank_score: Optional[ScoreFloat]
     metadata: Dict[str, Any]
     source: str
     rank: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Dict'e cevir."""
+        return {
+            "text": self.text,
+            "score": self.score,
+            "semantic_score": self.semantic_score,
+            "bm25_score": self.bm25_score,
+            "rerank_score": self.rerank_score,
+            "source": self.source,
+            "rank": self.rank,
+            "metadata": self.metadata
+        }
 
 
 @dataclass
 class RetrievedDocument:
     """Cikarilan dokuman."""
     text: str
-    score: float
+    score: ScoreFloat
     metadata: Dict[str, Any] = field(default_factory=dict)
     source: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Dict'e cevir."""
+        return {
+            "text": self.text,
+            "score": self.score,
+            "source": self.source,
+            "metadata": self.metadata
+        }
 
 
 class HybridRetriever:
@@ -71,32 +102,33 @@ class HybridRetriever:
 
     def __init__(
         self,
-        config: HybridSearchConfig = None,
+        config: Optional[HybridSearchConfig] = None,
         collection_name: str = "report_docs",
-        embedder: AdvancedEmbedder = None,
-        vector_store: VectorStore = None
-    ):
-        self.config = config or HybridSearchConfig()
-        self.collection_name = collection_name
+        embedder: Optional[AdvancedEmbedder] = None,
+        vector_store: Optional[VectorStore] = None
+    ) -> None:
+        self.config: HybridSearchConfig = config or HybridSearchConfig()
+        self.collection_name: str = collection_name
+        self._closed: bool = False
 
         # Embedder
-        self.embedder = embedder or AdvancedEmbedder()
+        self.embedder: AdvancedEmbedder = embedder or AdvancedEmbedder()
 
         # Vector store
-        self.vector_store = vector_store or VectorStore(collection_name=collection_name)
+        self.vector_store: VectorStore = vector_store or VectorStore(collection_name=collection_name)
 
         # BM25 index
-        self.bm25_index = BM25Index()
-        self._bm25_indexed = False
+        self.bm25_index: BM25Index = BM25Index()
+        self._bm25_indexed: bool = False
 
         # Reranker
-        self.reranker = None
+        self.reranker: Optional[CrossEncoderReranker] = None
         if self.config.use_reranking:
             self.reranker = CrossEncoderReranker(model_type="multilingual")
 
         # Cache
-        self.query_cache = None
-        self.embedding_cache = None
+        self.query_cache: Optional[QueryCache] = None
+        self.embedding_cache: Optional[EmbeddingCache] = None
         if self.config.use_cache:
             self.query_cache = QueryCache(ttl_hours=self.config.cache_ttl_hours)
             self.embedding_cache = EmbeddingCache()

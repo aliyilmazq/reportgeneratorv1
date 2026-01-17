@@ -35,14 +35,17 @@ except ImportError:
 
 from anthropic import Anthropic
 
-# Security: URL validation
+# Security: URL validation and Retry logic
 sys.path.insert(0, str(Path(__file__).parent.parent))
 try:
     from utils.validators import URLValidator
     from utils.exceptions import URLValidationError
+    from utils.retry_helper import retry_with_backoff, retry_api_call
     HAS_URL_VALIDATOR = True
+    HAS_RETRY = True
 except ImportError:
     HAS_URL_VALIDATOR = False
+    HAS_RETRY = False
     URLValidator = None
     URLValidationError = Exception
 

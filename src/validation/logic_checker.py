@@ -1,10 +1,20 @@
 """Mantık Kontrolü Modülü - İçerik tutarlılığı ve mantık hatası tespiti."""
 
 import re
+import sys
 from typing import Dict, Any, List, Tuple
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from rich.console import Console
+
+# Turkce sayi parser
+sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from utils.turkish_parser import TurkishNumberParser, parse_number
+except ImportError:
+    TurkishNumberParser = None
+    parse_number = None
 
 console = Console()
 
@@ -118,14 +128,21 @@ class LogicChecker:
         return issues
 
     def _extract_margin(self, text: str, keywords: List[str]) -> float:
-        """Metinden marjin değeri çıkar."""
+        """Metinden marjin değeri çıkar - Turkce format destekli."""
         for keyword in keywords:
             pattern = rf'{keyword}[:\s]*%?\s*([\d.,]+)\s*%?'
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 try:
-                    value = match.group(1).replace(',', '.')
-                    return float(value)
+                    value_str = match.group(1)
+                    # TurkishNumberParser varsa kullan
+                    if TurkishNumberParser:
+                        result = TurkishNumberParser.parse(value_str)
+                        if result is not None:
+                            return result
+                    else:
+                        value = value_str.replace(',', '.')
+                        return float(value)
                 except (ValueError, AttributeError):
                     # Marjin degeri parse edilemedi
                     pass

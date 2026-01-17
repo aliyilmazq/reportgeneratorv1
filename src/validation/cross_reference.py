@@ -1,10 +1,20 @@
 """Çapraz Referans Kontrolü - Bölümler arası tutarlılık."""
 
 import re
+import sys
 from typing import Dict, Any, List, Set
 from dataclasses import dataclass
+from pathlib import Path
 
 from rich.console import Console
+
+# Turkce sayi parser
+sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from utils.turkish_parser import TurkishNumberParser, parse_number
+except ImportError:
+    TurkishNumberParser = None
+    parse_number = None
 
 console = Console()
 
@@ -125,22 +135,37 @@ class CrossReferenceChecker:
         return metric_values
 
     def _parse_value(self, match) -> float:
-        """Regex eşleşmesinden sayısal değer çıkar."""
+        """Regex eşleşmesinden sayısal değer çıkar - Turkce format destekli."""
         groups = match.groups()
+        full_match = match.group(0).lower()
 
         # İlk sayısal grubu bul
         for group in groups:
-            if group and group.replace(',', '.').replace('.', '').isdigit():
-                value = float(group.replace(',', '.'))
+            if group:
+                # TurkishNumberParser varsa kullan (carpanli destek dahil)
+                if TurkishNumberParser:
+                    # Carpanli text olustur
+                    text_to_parse = group
+                    if 'milyar' in full_match:
+                        text_to_parse = f"{group} milyar"
+                    elif 'milyon' in full_match:
+                        text_to_parse = f"{group} milyon"
 
-                # Çarpan kontrolü
-                full_match = match.group(0).lower()
-                if 'milyar' in full_match:
-                    value *= 1_000_000_000
-                elif 'milyon' in full_match:
-                    value *= 1_000_000
+                    result = TurkishNumberParser.parse(text_to_parse)
+                    if result is not None:
+                        return result
 
-                return value
+                # Fallback
+                if group.replace(',', '.').replace('.', '').isdigit():
+                    value = float(group.replace(',', '.'))
+
+                    # Çarpan kontrolü
+                    if 'milyar' in full_match:
+                        value *= 1_000_000_000
+                    elif 'milyon' in full_match:
+                        value *= 1_000_000
+
+                    return value
 
         return None
 

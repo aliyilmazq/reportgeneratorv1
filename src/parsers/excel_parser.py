@@ -41,8 +41,27 @@ class ExcelParser:
     """Excel dosya okuyucu sınıfı."""
 
     def __init__(self):
+        self._current_wb = None
         if pd is None:
             raise ImportError("pandas kütüphanesi yüklü değil. 'pip install pandas openpyxl' komutunu çalıştırın.")
+
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - acik workbook'lari kapat."""
+        self.close()
+        return False
+
+    def close(self):
+        """Acik kaynaklari temizle."""
+        if self._current_wb is not None:
+            try:
+                self._current_wb.close()
+            except (AttributeError, TypeError):
+                pass
+            self._current_wb = None
 
     def parse(self, file_path: str) -> ExcelContent:
         """Excel dosyasını oku ve içeriği çıkar."""

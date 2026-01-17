@@ -7,6 +7,7 @@ bu kurallara uygun çalışmasını sağlar.
 
 import os
 import re
+import threading
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
@@ -421,17 +422,66 @@ class RulesLoadError(Exception):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# GLOBAL KURAL SİSTEMİ
-# Bu değişkenler uygulama boyunca bellekte kalır
+# THREAD-SAFE GLOBAL KURAL SİSTEMİ
+# Bu değişkenler uygulama boyunca bellekte kalır ve thread-safe erisim saglar
 # ═══════════════════════════════════════════════════════════════════════════
 
-_rules_loader: Optional[RulesLoader] = None
-_global_rules: Optional[LoadedRules] = None  # Global kurallar - bellekte tutulur
+class _RulesLoaderSingleton:
+    """
+    Thread-safe singleton RulesLoader.
+
+    Double-checked locking pattern ile thread-safe singleton implementasyonu.
+    """
+    _instance: Optional['_RulesLoaderSingleton'] = None
+    _lock: threading.Lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        if self._initialized:
+            return
+        self._rules_loader: Optional[RulesLoader] = None
+        self._global_rules: Optional[LoadedRules] = None
+        self._rules_lock = threading.RLock()  # Reentrant lock for rules access
+        self._initialized = True
+
+    @property
+    def loader(self) -> Optional[RulesLoader]:
+        return self._rules_loader
+
+    @loader.setter
+    def loader(self, value: RulesLoader):
+        with self._rules_lock:
+            self._rules_loader = value
+
+    @property
+    def rules(self) -> Optional[LoadedRules]:
+        with self._rules_lock:
+            return self._global_rules
+
+    @rules.setter
+    def rules(self, value: LoadedRules):
+        with self._rules_lock:
+            self._global_rules = value
+
+    def is_loaded(self) -> bool:
+        with self._rules_lock:
+            return self._global_rules is not None
+
+
+# Singleton instance
+_singleton = _RulesLoaderSingleton()
 
 
 def get_rules_loader(rules_dir: Optional[str] = None) -> RulesLoader:
     """
-    Global RulesLoader instance'ı al veya oluştur.
+    Global RulesLoader instance'ı al veya oluştur (thread-safe).
 
     Args:
         rules_dir: Kural dizini (ilk çağrıda kullanılır)
@@ -439,17 +489,17 @@ def get_rules_loader(rules_dir: Optional[str] = None) -> RulesLoader:
     Returns:
         RulesLoader: Singleton instance
     """
-    global _rules_loader
+    if _singleton.loader is None:
+        with _singleton._rules_lock:
+            if _singleton.loader is None:
+                _singleton.loader = RulesLoader(rules_dir)
 
-    if _rules_loader is None:
-        _rules_loader = RulesLoader(rules_dir)
-
-    return _rules_loader
+    return _singleton.loader
 
 
 def ensure_rules_loaded() -> LoadedRules:
     """
-    Kuralların yüklendiğinden emin ol.
+    Kuralların yüklendiğinden emin ol (thread-safe).
 
     Rapor üretimi başlamadan önce bu fonksiyon çağrılmalıdır.
 
@@ -459,31 +509,30 @@ def ensure_rules_loaded() -> LoadedRules:
     Raises:
         RulesLoadError: Kurallar yüklenemezse
     """
-    global _global_rules
-
     loader = get_rules_loader()
 
     if loader.loaded_rules is None:
-        _global_rules = loader.load_all_rules()
+        with _singleton._rules_lock:
+            if loader.loaded_rules is None:
+                _singleton.rules = loader.load_all_rules()
     else:
-        _global_rules = loader.loaded_rules
+        _singleton.rules = loader.loaded_rules
 
-    return _global_rules
+    return _singleton.rules
 
 
 def set_global_rules(rules: LoadedRules):
     """
-    Global kuralları ayarla.
+    Global kuralları ayarla (thread-safe).
 
     Bu fonksiyon main.py tarafından kurallar yüklendikten sonra çağrılır.
     """
-    global _global_rules
-    _global_rules = rules
+    _singleton.rules = rules
 
 
 def get_global_rules() -> LoadedRules:
     """
-    Bellekte tutulan global kuralları döndür.
+    Bellekte tutulan global kuralları döndür (thread-safe).
 
     Bu fonksiyon herhangi bir modülden çağrılabilir.
 
@@ -493,9 +542,9 @@ def get_global_rules() -> LoadedRules:
     Raises:
         RulesLoadError: Kurallar yüklenmemişse
     """
-    global _global_rules
+    rules = _singleton.rules
 
-    if _global_rules is None:
+    if rules is None:
         raise RulesLoadError(
             "KURALLAR BELLEKTE DEĞİL!\n"
             "Uygulama başlangıcında kurallar yüklenmemiş olabilir.\n"
@@ -503,12 +552,12 @@ def get_global_rules() -> LoadedRules:
             "KURALLAR YÜKLENMEDEN HİÇBİR İŞLEM YAPILAMAZ!"
         )
 
-    return _global_rules
+    return rules
 
 
 def rules_are_loaded() -> bool:
-    """Kuralların bellekte olup olmadığını kontrol et."""
-    return _global_rules is not None
+    """Kuralların bellekte olup olmadığını kontrol et (thread-safe)."""
+    return _singleton.is_loaded()
 
 
 def get_rules_summary() -> str:

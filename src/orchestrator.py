@@ -89,19 +89,65 @@ class GeneratedReport:
 
 class ReportOrchestrator:
     """
-    Ana rapor üretim koordinatörü.
+    Ana rapor uretim koordinatoru.
 
-    Tüm fazları sırayla yönetir ve ilerleme takibi yapar.
+    Tum fazlari sirayla yonetir ve ilerleme takibi yapar.
+
+    Fazlar:
+        1. Baslatma - Kurallari yukle, sistemi hazirla
+        2. Dosya Tarama - Giris dosyalarini tara
+        3. Dosya Isleme - PDF, Excel, Word, gorsel parse
+        4. Web Arastirmasi - Gercek web kaynaklarindan bilgi topla
+        5. Veri Toplama - Ekonomik veriler, sektor istatistikleri
+        6. Icerik Planlama - Rapor yapisini olustur
+        7. Bolum Uretimi - Her bolum icin icerik uret
+        8. Dogrulama - Kalite ve tutarlilik kontrol
+        9. Belge Uretimi - DOCX/PDF cikti olustur
+        10. Tamamlama - Istatistikleri derle
+
+    Attributes:
+        client: Anthropic API client
+        output_dir: Cikti dizini
+        rules_loader: Kural yukleyici
+        scanner: Dosya tarayici
+        web_researcher: Web arastirmaci
+        content_planner: Icerik planlayici
+        phase_tracker: Faz takipci
+
+    Example:
+        >>> orchestrator = ReportOrchestrator(output_dir="./output")
+        >>> user_input = UserInput(
+        ...     input_path="./data",
+        ...     output_type="is_plani",
+        ...     output_format="both",
+        ...     language="tr"
+        ... )
+        >>> report = orchestrator.generate_report(user_input)
+        >>> print(f"Rapor olusturuldu: {report.output_files}")
     """
 
     def __init__(
         self,
         anthropic_client: Optional[Anthropic] = None,
         output_dir: str = "./output",
-        templates_path: str = None,
-        rules_dir: str = None,
+        templates_path: Optional[str] = None,
+        rules_dir: Optional[str] = None,
         use_live_progress: bool = True
-    ):
+    ) -> None:
+        """
+        ReportOrchestrator'u baslat.
+
+        Args:
+            anthropic_client: Anthropic API client. None ise ANTHROPIC_API_KEY
+                environment variable'dan olusturulur.
+            output_dir: Cikti dosyalarinin kaydedilecegi dizin.
+            templates_path: Rapor sablonlari dizini.
+            rules_dir: Kural dosyalari dizini.
+            use_live_progress: Canli ilerleme gosterimi aktif mi.
+
+        Raises:
+            ValueError: ANTHROPIC_API_KEY bulunamazsa.
+        """
         # Anthropic client
         if anthropic_client:
             self.client = anthropic_client

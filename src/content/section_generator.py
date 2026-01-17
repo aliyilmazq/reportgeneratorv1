@@ -8,10 +8,14 @@ Bu modül her rapor bölümü için zengin, paragraf tabanlı içerik üretir.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Any
+from typing import (
+    List, Dict, Optional, Any, Callable, Union,
+    ClassVar, Tuple, Sequence
+)
 from datetime import datetime
 import re
 import time
+import logging
 
 from anthropic import Anthropic
 
@@ -19,6 +23,26 @@ from .content_planner import SectionPlan
 from ..research.citation_manager import CitationManager
 from ..research.web_researcher import WebSource
 from ..research.source_collector import CollectedSource
+
+# Type imports
+try:
+    from ..types import (
+        ProgressCallback, TableDict, MetadataDict, QualityLevel,
+        get_quality_level
+    )
+except ImportError:
+    # Fallback types
+    ProgressCallback = Callable[[str, float, str], None]
+    TableDict = Dict[str, Any]
+    MetadataDict = Dict[str, Any]
+    QualityLevel = str
+    def get_quality_level(score: float) -> str:
+        if score >= 0.9: return "excellent"
+        elif score >= 0.7: return "high"
+        elif score >= 0.5: return "medium"
+        return "low"
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -32,10 +56,29 @@ class GeneratedSection:
     paragraph_count: int
     citations_used: List[str]
     data_points_used: List[str]
-    tables: List[Dict[str, Any]]
+    tables: List[TableDict]
     quality_score: float
     generation_time_seconds: float
     subsections: List["GeneratedSection"] = field(default_factory=list)
+    metadata: MetadataDict = field(default_factory=dict)
+
+    @property
+    def quality_level(self) -> QualityLevel:
+        """Kalite seviyesi."""
+        return get_quality_level(self.quality_score)
+
+    @property
+    def is_valid(self) -> bool:
+        """Gecerlilik kontrolu."""
+        return self.word_count > 0 and self.quality_score >= 0.5
+
+    def get_plain_text(self) -> str:
+        """Duz metin olarak icerik."""
+        # Markdown isarelerini temizle
+        text = re.sub(r'#+ ', '', self.content)
+        text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
+        text = re.sub(r'\[(\d+)\]', '', text)
+        return text.strip()
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -49,8 +92,10 @@ class GeneratedSection:
             "data_points_used": self.data_points_used,
             "tables": self.tables,
             "quality_score": self.quality_score,
+            "quality_level": str(self.quality_level),
             "generation_time_seconds": self.generation_time_seconds,
-            "subsections": [s.to_dict() for s in self.subsections]
+            "subsections": [s.to_dict() for s in self.subsections],
+            "metadata": self.metadata
         }
 
 
@@ -66,7 +111,7 @@ class SectionGenerator:
     """
 
     # Bölüm bazlı içerik şablonları
-    SECTION_PROMPTS = {
+    SECTION_PROMPTS: ClassVar[Dict[str, str]] = {
         "yonetici_ozeti": """
 Bu bölüm, raporun en kritik özet bölümüdür. Yöneticiler için hazırlanmış,
 kısa ve öz ama bilgi dolu bir özet yazın.
@@ -141,19 +186,21 @@ Bu bölüm, potansiyel riskleri ve yönetim stratejilerini açıklamalıdır.
         rules_prompt: str = "",
         min_words: int = 500,
         min_paragraphs: int = 3,
-        min_sources: int = 2
-    ):
-        self.client = anthropic_client
-        self.citation_manager = citation_manager
-        self.language = language
-        self.current_date = datetime.now().strftime("%Y-%m-%d")
-        self.current_year = datetime.now().year
+        min_sources: int = 2,
+        model: str = "claude-opus-4-5-20250514"
+    ) -> None:
+        self.client: Anthropic = anthropic_client
+        self.citation_manager: CitationManager = citation_manager
+        self.language: str = language
+        self.current_date: str = datetime.now().strftime("%Y-%m-%d")
+        self.current_year: int = datetime.now().year
+        self.model: str = model
 
         # Kurallar
-        self.rules_prompt = rules_prompt
-        self.min_words = min_words
-        self.min_paragraphs = min_paragraphs
-        self.min_sources = min_sources
+        self.rules_prompt: str = rules_prompt
+        self.min_words: int = min_words
+        self.min_paragraphs: int = min_paragraphs
+        self.min_sources: int = min_sources
 
     def generate_section(
         self,
@@ -162,7 +209,7 @@ Bu bölüm, potansiyel riskleri ve yönetim stratejilerini açıklamalıdır.
         data_points: Dict[str, Any],
         rag_context: str = "",
         file_content: str = "",
-        progress_callback: callable = None
+        progress_callback: Optional[ProgressCallback] = None
     ) -> GeneratedSection:
         """
         Tek bir bölüm için zengin içerik üret.
@@ -445,7 +492,7 @@ Bu bölüm {section_plan.title.lower()} konusunu ele almaktadır.
 Detaylı analiz için ek araştırma gerekmektedir.
 """
 
-    def _extract_tables(self, content: str) -> List[Dict[str, Any]]:
+    def _extract_tables(self, content: str) -> List[TableDict]:
         """İçerikten tabloları çıkar."""
         tables = []
 
@@ -528,11 +575,11 @@ Detaylı analiz için ek araştırma gerekmektedir.
     def generate_all_sections(
         self,
         section_plans: List[SectionPlan],
-        source_collector,
+        source_collector: Any,  # SourceCollector type
         data_points: Dict[str, Any],
         rag_context: str = "",
-        file_contents: Dict[str, str] = None,
-        progress_callback: callable = None
+        file_contents: Optional[Dict[str, str]] = None,
+        progress_callback: Optional[ProgressCallback] = None
     ) -> List[GeneratedSection]:
         """Tüm bölümleri üret."""
         sections = []

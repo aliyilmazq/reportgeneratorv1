@@ -5,9 +5,11 @@ Bu modül TÜİK ve TCMB verilerini web araştırması yoluyla toplar.
 API anahtarı gerektirmez, DuckDuckGo üzerinden güncel verileri arar.
 """
 
+import sys
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Any
 from datetime import datetime
+from pathlib import Path
 import re
 import time
 
@@ -18,6 +20,15 @@ except ImportError:
     HAS_DDGS = False
 
 from anthropic import Anthropic
+
+# Turkce sayi parser
+sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from utils.turkish_parser import TurkishNumberParser, parse_number
+    HAS_TR_PARSER = True
+except ImportError:
+    HAS_TR_PARSER = False
+    TurkishNumberParser = None
 
 
 @dataclass
@@ -161,10 +172,20 @@ class WebDataFetcher:
             return []
 
     def _extract_number(self, text: str, indicator: str) -> Optional[Dict[str, Any]]:
-        """Metinden sayısal değer çıkar."""
+        """Metinden sayısal değer çıkar - Turkce format destekli."""
         text = text.lower()
 
-        # Farklı pattern'ler
+        # TurkishNumberParser varsa, carpanli sayilari cikar
+        if HAS_TR_PARSER and TurkishNumberParser:
+            numbers = TurkishNumberParser.extract_numbers(text)
+            if numbers:
+                return {
+                    "value": numbers[0],
+                    "multiplier": 1,  # Parser carpani zaten uyguluyor
+                    "raw": str(numbers[0])
+                }
+
+        # Fallback: Farklı pattern'ler
         patterns = [
             # "1.5 milyar dolar" veya "1,5 milyar TL"
             r'(\d{1,3}(?:[.,]\d{1,3})*)\s*(milyar|milyon|trilyon)?\s*(dolar|tl|usd|eur|euro|₺|\$|€)?',
@@ -181,11 +202,17 @@ class WebDataFetcher:
                 if isinstance(match, tuple):
                     value_str = next((m for m in match if m and re.match(r'\d', m)), None)
                     if value_str:
-                        # Sayıyı parse et
-                        value_str = value_str.replace(".", "").replace(",", ".")
-                        try:
-                            value = float(value_str)
+                        # TurkishNumberParser ile parse et
+                        if HAS_TR_PARSER and TurkishNumberParser:
+                            value = TurkishNumberParser.parse(value_str)
+                        else:
+                            value_str = value_str.replace(".", "").replace(",", ".")
+                            try:
+                                value = float(value_str)
+                            except ValueError:
+                                continue
 
+                        if value is not None:
                             # Çarpan uygula
                             multiplier = 1
                             full_text = " ".join(match).lower()
@@ -201,8 +228,6 @@ class WebDataFetcher:
                                 "multiplier": multiplier,
                                 "raw": match
                             }
-                        except ValueError:
-                            continue
         return None
 
     def _extract_value_with_claude(

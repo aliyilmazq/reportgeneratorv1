@@ -1,27 +1,73 @@
 """Finansal Doğrulama Modülü - Sayısal tutarlılık ve mantık kontrolü."""
 
 import re
-from typing import Dict, Any, List, Optional, Tuple
+import sys
+import logging
+from typing import (
+    Dict, Any, List, Optional, Tuple, Union, ClassVar,
+    Set, Pattern, Match
+)
 from dataclasses import dataclass, field
 from pathlib import Path
+from enum import Enum
 
 import yaml
 from rich.console import Console
 from rich.table import Table
 
+# Turkce sayi parser
+sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from utils.turkish_parser import TurkishNumberParser, parse_number
+except ImportError:
+    TurkishNumberParser = None
+    parse_number = None
+
+logger = logging.getLogger(__name__)
 console = Console()
+
+
+class IssueSeverity(str, Enum):
+    """Sorun ciddiyet seviyeleri."""
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+
+
+class IssueCategory(str, Enum):
+    """Sorun kategorileri."""
+    SUM_MISMATCH = "sum_mismatch"
+    PERCENTAGE_ERROR = "percentage_error"
+    PERCENTAGE_SUM = "percentage_sum"
+    LOGIC_ERROR = "logic_error"
+    GROWTH_RATE = "growth_rate"
+    VALUE_INCONSISTENCY = "value_inconsistency"
+    OUTDATED_DATA = "outdated_data"
+    FUTURE_PROJECTION = "future_projection"
 
 
 @dataclass
 class ValidationIssue:
     """Doğrulama sorunu."""
-    severity: str  # 'error', 'warning', 'info'
-    category: str  # 'sum_mismatch', 'percentage_error', 'logic_error', etc.
+    severity: IssueSeverity
+    category: IssueCategory
     message: str
     location: str  # Hangi bölümde
     current_value: Any = None
     expected_value: Any = None
     suggestion: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Dict'e cevir."""
+        return {
+            "severity": self.severity.value if isinstance(self.severity, Enum) else self.severity,
+            "category": self.category.value if isinstance(self.category, Enum) else self.category,
+            "message": self.message,
+            "location": self.location,
+            "current_value": str(self.current_value) if self.current_value else None,
+            "expected_value": str(self.expected_value) if self.expected_value else None,
+            "suggestion": self.suggestion
+        }
 
 
 @dataclass
@@ -33,12 +79,33 @@ class ValidationResult:
     fixed_content: Dict[str, str] = field(default_factory=dict)
     summary: str = ""
 
+    @property
+    def error_count(self) -> int:
+        """Hata sayisi."""
+        return sum(1 for i in self.issues if i.severity == IssueSeverity.ERROR)
+
+    @property
+    def warning_count(self) -> int:
+        """Uyari sayisi."""
+        return sum(1 for i in self.issues if i.severity == IssueSeverity.WARNING)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Dict'e cevir."""
+        return {
+            "is_valid": self.is_valid,
+            "score": self.score,
+            "error_count": self.error_count,
+            "warning_count": self.warning_count,
+            "issues": [i.to_dict() for i in self.issues],
+            "summary": self.summary
+        }
+
 
 class FinancialValidator:
     """Finansal veri doğrulayıcı - Tutarlılık ve mantık kontrolü."""
 
     # Sektör benchmark verileri
-    SECTOR_BENCHMARKS = {
+    SECTOR_BENCHMARKS: ClassVar[Dict[str, Dict[str, Tuple[int, int]]]] = {
         "e_ticaret": {
             "gross_margin": (20, 60),  # min, max
             "net_margin": (2, 20),
@@ -73,9 +140,9 @@ class FinancialValidator:
         }
     }
 
-    def __init__(self, config_dir: str = None):
-        self.config_dir = config_dir or Path(__file__).parent.parent.parent / "config"
-        self.benchmarks = self._load_benchmarks()
+    def __init__(self, config_dir: Optional[str] = None) -> None:
+        self.config_dir: Path = Path(config_dir) if config_dir else Path(__file__).parent.parent.parent / "config"
+        self.benchmarks: Dict[str, Any] = self._load_benchmarks()
 
     def _load_benchmarks(self) -> Dict[str, Any]:
         """Benchmark verilerini yükle."""
@@ -205,16 +272,25 @@ class FinancialValidator:
         return numbers
 
     def _parse_number(self, text: str) -> float:
-        """Metni sayıya çevir."""
+        """Metni sayıya çevir - Turkce format destekli."""
         if not text:
             return 0.0
-        # Türkçe format: 1.234,56 -> 1234.56
+
+        # TurkishNumberParser varsa kullan
+        if TurkishNumberParser:
+            result = TurkishNumberParser.parse(str(text).strip(), default=0.0)
+            return result if result is not None else 0.0
+
+        # Fallback: basit parse
         text = str(text).strip()
         if ',' in text and '.' in text:
             text = text.replace('.', '').replace(',', '.')
         elif ',' in text:
             text = text.replace(',', '.')
-        return float(text)
+        try:
+            return float(text)
+        except ValueError:
+            return 0.0
 
     def _check_percentage_sums(self, content: Dict[str, str]) -> List[ValidationIssue]:
         """Yüzde toplamlarını kontrol et."""
@@ -245,8 +321,8 @@ class FinancialValidator:
                 total = sum(percentages_in_tables)
                 if total > 105:  # %5 tolerans
                     issues.append(ValidationIssue(
-                        severity='warning',
-                        category='percentage_sum',
+                        severity=IssueSeverity.WARNING,
+                        category=IssueCategory.PERCENTAGE_SUM,
                         message=f"Yüzde toplamı %100'ü aşıyor: %{total:.1f}",
                         location=section_id,
                         current_value=total,
@@ -293,25 +369,25 @@ class FinancialValidator:
 
                 # Büyüme oranı olarak görünen yüksek değerler
                 if 'büyüme' in text.lower() or 'artış' in text.lower() or 'growth' in text.lower():
-                    if value > 200:
+                    if value > 500:
                         issues.append(ValidationIssue(
-                            severity='warning',
-                            category='growth_rate',
-                            message=f"Çok yüksek büyüme oranı: %{value:.0f}",
-                            location=section_id,
-                            current_value=value,
-                            expected_value="< %200",
-                            suggestion="Bu büyüme oranı gerçekçi mi? Doğrulayın."
-                        ))
-                    elif value > 500:
-                        issues.append(ValidationIssue(
-                            severity='error',
-                            category='growth_rate',
+                            severity=IssueSeverity.ERROR,
+                            category=IssueCategory.GROWTH_RATE,
                             message=f"Gerçekçi olmayan büyüme oranı: %{value:.0f}",
                             location=section_id,
                             current_value=value,
                             expected_value="< %200",
                             suggestion="Bu büyüme oranı muhtemelen hatalı, düzeltin."
+                        ))
+                    elif value > 200:
+                        issues.append(ValidationIssue(
+                            severity=IssueSeverity.WARNING,
+                            category=IssueCategory.GROWTH_RATE,
+                            message=f"Çok yüksek büyüme oranı: %{value:.0f}",
+                            location=section_id,
+                            current_value=value,
+                            expected_value="< %200",
+                            suggestion="Bu büyüme oranı gerçekçi mi? Doğrulayın."
                         ))
 
         return issues
@@ -334,8 +410,8 @@ class FinancialValidator:
                 # Aşırı tutarsızlık kontrolü (1000x fark)
                 if max_val / min_val > 10000 and min_val > 1:
                     issues.append(ValidationIssue(
-                        severity='warning',
-                        category='value_inconsistency',
+                        severity=IssueSeverity.WARNING,
+                        category=IssueCategory.VALUE_INCONSISTENCY,
                         message=f"Para değerleri arasında büyük tutarsızlık var",
                         location="genel",
                         current_value=f"{min_val:,.0f} - {max_val:,.0f}",
@@ -362,16 +438,16 @@ class FinancialValidator:
             for year in years_list:
                 if year < 2015:
                     issues.append(ValidationIssue(
-                        severity='info',
-                        category='outdated_data',
+                        severity=IssueSeverity.INFO,
+                        category=IssueCategory.OUTDATED_DATA,
                         message=f"Eski veri yılı tespit edildi: {year}",
                         location="genel",
                         suggestion="Güncel veriler kullanın"
                     ))
                 elif year > current_year + 10:
                     issues.append(ValidationIssue(
-                        severity='warning',
-                        category='future_projection',
+                        severity=IssueSeverity.WARNING,
+                        category=IssueCategory.FUTURE_PROJECTION,
                         message=f"Çok uzak gelecek projeksiyonu: {year}",
                         location="genel",
                         suggestion="Projeksiyon 5-7 yıl ile sınırlı tutulmalı"
@@ -381,9 +457,9 @@ class FinancialValidator:
 
     def _create_summary(self, issues: List[ValidationIssue], score: int) -> str:
         """Doğrulama özeti oluştur."""
-        error_count = sum(1 for i in issues if i.severity == 'error')
-        warning_count = sum(1 for i in issues if i.severity == 'warning')
-        info_count = sum(1 for i in issues if i.severity == 'info')
+        error_count = sum(1 for i in issues if i.severity == IssueSeverity.ERROR)
+        warning_count = sum(1 for i in issues if i.severity == IssueSeverity.WARNING)
+        info_count = sum(1 for i in issues if i.severity == IssueSeverity.INFO)
 
         summary = f"""
 DOĞRULAMA SONUCU
@@ -397,20 +473,22 @@ Bilgi: {info_count}
         if error_count > 0:
             summary += "KRİTİK HATALAR:\n"
             for issue in issues:
-                if issue.severity == 'error':
-                    summary += f"  - [{issue.category}] {issue.message}\n"
+                if issue.severity == IssueSeverity.ERROR:
+                    cat_str = issue.category.value if isinstance(issue.category, Enum) else issue.category
+                    summary += f"  - [{cat_str}] {issue.message}\n"
                     if issue.suggestion:
                         summary += f"    Öneri: {issue.suggestion}\n"
 
         if warning_count > 0:
             summary += "\nUYARILAR:\n"
             for issue in issues:
-                if issue.severity == 'warning':
-                    summary += f"  - [{issue.category}] {issue.message}\n"
+                if issue.severity == IssueSeverity.WARNING:
+                    cat_str = issue.category.value if isinstance(issue.category, Enum) else issue.category
+                    summary += f"  - [{cat_str}] {issue.message}\n"
 
         return summary
 
-    def print_result(self, result: ValidationResult):
+    def print_result(self, result: ValidationResult) -> None:
         """Sonucu ekrana yazdır."""
         # Başlık
         if result.is_valid:
@@ -430,16 +508,17 @@ Bilgi: {info_count}
         table.add_column("Öneri", style="dim")
 
         for issue in result.issues:
-            if issue.severity == 'error':
+            if issue.severity == IssueSeverity.ERROR:
                 severity_style = "[red]HATA[/red]"
-            elif issue.severity == 'warning':
+            elif issue.severity == IssueSeverity.WARNING:
                 severity_style = "[yellow]UYARI[/yellow]"
             else:
                 severity_style = "[blue]BİLGİ[/blue]"
 
+            cat_str = issue.category.value if isinstance(issue.category, Enum) else str(issue.category)
             table.add_row(
                 severity_style,
-                issue.category,
+                cat_str,
                 issue.message[:50],
                 issue.suggestion[:40] if issue.suggestion else "-"
             )

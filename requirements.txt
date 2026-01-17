@@ -25,6 +25,9 @@ questionary>=2.0.0
 # Anthropic API
 anthropic>=0.18.0
 
+# Environment Variables
+python-dotenv>=1.0.0
+
 # ======== YENİ: v3.0 Modülleri ========
 
 # RAG Sistemi (Vektör veritabanı - local embedding)
@@ -39,12 +42,9 @@ kaleido>=0.2.1
 # Veri İşleme
 numpy>=1.24.0
 
-# ======== YENİ: v4.0 Web Araştırma ========
-
-# Web araştırma
-duckduckgo_search>=4.0.0
-httpx>=0.25.0
-beautifulsoup4>=4.12.0
+# ======== v4.0: Claude-Only Mimari ========
+# TÜM işlemler SADECE Claude API üzerinden yapılır
+# Harici web araştırma servisleri KALDIRILDI (KURAL)
 
 # ======== YENİ: v5.0 Gelişmiş RAG ========
 

@@ -125,44 +125,46 @@ def test_file_scanner():
 
 
 def test_web_research():
-    """Web arastirma modulunu test et."""
-    console.print("\n[bold cyan]5. WEB ARASTIRMA TESTI[/bold cyan]")
+    """Claude-only arastirma modulunu test et."""
+    console.print("\n[bold cyan]5. CLAUDE ARASTIRMA TESTI[/bold cyan]")
 
     try:
         from src.research.web_researcher import WebResearcher
 
         researcher = WebResearcher()
-        # Basit bir arama yap
-        results = researcher.search("Turkiye ekonomisi 2024", max_results=3)
+        # Claude ile arastirma yap
+        result = researcher.research_topic("Turkiye ekonomisi", required_aspects=["enflasyon"])
 
-        console.print(f"   [green]✓[/green] Web arama sonucu: {len(results)} kaynak")
-        for r in results[:2]:
-            title = r.title[:50] + "..." if len(r.title) > 50 else r.title
-            console.print(f"   [dim]  - {title}[/dim]")
+        console.print(f"   [green]✓[/green] Claude arastirma tamamlandi")
+        console.print(f"   [dim]  - Ozet: {result.summary[:80]}...[/dim]")
+        console.print(f"   [dim]  - Kaynak sayisi: {len(result.sources)}[/dim]")
         return True
     except Exception as e:
-        console.print(f"   [yellow]![/yellow] Web arastirma: {e}")
-        return True  # Opsiyonel, basarisiz olsa da devam
+        console.print(f"   [red]✗[/red] Claude arastirma hatasi: {e}")
+        return False
 
 
 def test_data_fetcher():
-    """Veri cekme modulunu test et."""
-    console.print("\n[bold cyan]6. VERI CEKME TESTI[/bold cyan]")
+    """Claude-only veri cekme modulunu test et."""
+    console.print("\n[bold cyan]6. CLAUDE VERI TESTI[/bold cyan]")
 
     try:
         from src.data_sources.web_data_fetcher import WebDataFetcher
 
         fetcher = WebDataFetcher()
-        data = fetcher.get_economic_indicators()
+        # Tek bir gosterge test et (hizli)
+        data = fetcher.get_macro_indicator("enflasyon")
 
         if data:
-            console.print(f"   [green]✓[/green] Ekonomik veri: {len(data)} gosterge")
+            console.print(f"   [green]✓[/green] Claude veri: {data.indicator}")
+            console.print(f"   [dim]  - Deger: {data.value_formatted}[/dim]")
+            console.print(f"   [dim]  - Donem: {data.period}[/dim]")
         else:
-            console.print(f"   [yellow]![/yellow] Ekonomik veri alinamadi (cache veya API sorunu olabilir)")
+            console.print(f"   [yellow]![/yellow] Veri alinamadi")
         return True
     except Exception as e:
-        console.print(f"   [yellow]![/yellow] Veri cekme: {e}")
-        return True  # Opsiyonel
+        console.print(f"   [red]✗[/red] Claude veri hatasi: {e}")
+        return False
 
 
 def test_content_generation():

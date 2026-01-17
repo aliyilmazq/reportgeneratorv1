@@ -4,13 +4,15 @@ Yapay zeka destekli kurumsal rapor uretim sistemi. Claude API kullanarak PDF, Ex
 
 ## Ozellikler
 
-- **Gercek Web Arastirmasi**: DuckDuckGo API ile guncel kaynak toplama
+- **Claude-Only Mimari**: TUM islemler SADECE Claude API uzerinden yapilir
 - **Coklu Dosya Destegi**: PDF, DOCX, XLSX, CSV, PNG, JPG
 - **Turkce Optimizasyon**: Turkce sayi formati, karakter ve icerik destegi
-- **Akilli Icerik Uretimi**: Claude Opus 4.5 ile zengin paragraf icerigi
-- **Kaynak Yonetimi**: Otomatik alinti ve kaynakca olusturma
+- **Akilli Icerik Uretimi**: Claude ile zengin paragraf icerigi
+- **Arastirma ve Analiz**: Claude tabanli arastirma ve veri analizi
 - **Kalite Kontrolu**: Minimum 500 kelime/bolum, %70 kalite puani
 - **Coklu Format**: DOCX ve PDF cikti destegi
+
+> **KURAL**: Tum akis sadece Claude API uzerinden olur. Harici API kullanilmaz!
 
 ## Kurulum
 

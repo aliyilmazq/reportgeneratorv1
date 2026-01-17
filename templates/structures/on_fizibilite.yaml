@@ -1,0 +1,66 @@
+# Ön Fizibilite Raporu Yapısı
+
+name: "Ön Fizibilite"
+description: "Fizibilite değerlendirme raporu"
+
+sections:
+  - id: "kapak_sayfasi"
+    title: "Kapak"
+    required: true
+    auto_generate: true
+
+  - id: "ozet"
+    title: "Özet"
+    required: true
+    level: 1
+    description: "Fizibilite çalışmasının özeti ve sonucu"
+    min_words: 100
+    max_words: 400
+
+  - id: "proje_tanimi"
+    title: "Proje Tanımı"
+    required: true
+    level: 1
+    description: "Değerlendirilen proje veya girişimin tanımı"
+    min_words: 150
+    max_words: 500
+
+  - id: "pazar_degerlendirmesi"
+    title: "Pazar Değerlendirmesi"
+    required: true
+    level: 1
+    description: "Pazar fırsatı, talep analizi, hedef kitle"
+    min_words: 200
+    max_words: 600
+
+  - id: "teknik_degerlendirme"
+    title: "Teknik Değerlendirme"
+    required: true
+    level: 1
+    description: "Teknik gereksinimler, altyapı, kaynaklar"
+    min_words: 150
+    max_words: 500
+
+  - id: "finansal_degerlendirme"
+    title: "Finansal Değerlendirme"
+    required: true
+    level: 1
+    description: "Yatırım maliyeti, beklenen getiri, başa baş analizi"
+    min_words: 200
+    max_words: 600
+
+  - id: "risk_degerlendirmesi"
+    title: "Risk Değerlendirmesi"
+    required: true
+    level: 1
+    description: "Potansiyel riskler ve etki analizi"
+    min_words: 100
+    max_words: 400
+
+  - id: "sonuc_ve_oneri"
+    title: "Sonuç ve Öneri"
+    required: true
+    level: 1
+    description: "Fizibilite sonucu ve devam/vazgeçme önerisi"
+    min_words: 100
+    max_words: 300

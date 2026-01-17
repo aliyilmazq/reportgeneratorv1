@@ -1,0 +1,53 @@
+{
+  "colors": {
+    "primary": "#1a365d",
+    "secondary": "#2c5282",
+    "accent": "#3182ce",
+    "text": "#1a202c",
+    "muted": "#718096",
+    "table_header": "#e2e8f0",
+    "table_alt_row": "#f7fafc",
+    "success": "#38a169",
+    "warning": "#d69e2e",
+    "error": "#e53e3e"
+  },
+  "fonts": {
+    "heading": {
+      "name": "Arial",
+      "size_h1": 18,
+      "size_h2": 14,
+      "size_h3": 12,
+      "weight": "bold"
+    },
+    "body": {
+      "name": "Calibri",
+      "size": 11,
+      "line_height": 1.15
+    },
+    "caption": {
+      "name": "Calibri",
+      "size": 9,
+      "style": "italic"
+    },
+    "code": {
+      "name": "Consolas",
+      "size": 10
+    }
+  },
+  "spacing": {
+    "paragraph_after": 8,
+    "heading_before": 18,
+    "heading_after": 10,
+    "list_indent": 20,
+    "table_cell_padding": 5
+  },
+  "page": {
+    "size": "A4",
+    "margins": {
+      "top": 2.5,
+      "bottom": 2.5,
+      "left": 2.5,
+      "right": 2.5
+    }
+  }
+}

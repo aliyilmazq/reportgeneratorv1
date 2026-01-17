@@ -1,0 +1,142 @@
+# Rapor Üretici - Sabit Kurallar
+
+# Dil kuralları
+language_rules:
+  turkish:
+    # Türkçe karakter hassasiyeti
+    characters: ["ş", "ğ", "ü", "ö", "ç", "ı", "İ", "Ş", "Ğ", "Ü", "Ö", "Ç"]
+
+    # İmla kuralları
+    spelling:
+      - "de/da bağlaç olduğunda ayrı yazılır"
+      - "ki bağlaç olduğunda ayrı yazılır"
+      - "Cümle büyük harfle başlar"
+      - "Özel isimler büyük harfle yazılır"
+      - "Kısaltmalardan sonra nokta konur"
+      - "Sayılardan sonra nokta ile sıralama yapılır"
+
+    # Kurumsal ton
+    tone:
+      - "Resmi ve profesyonel dil kullanılır"
+      - "Edilgen yapı tercih edilir"
+      - "Teknik terimler parantez içinde açıklanır"
+      - "Kısa ve net cümleler kurulur"
+      - "Jargon ve argo ifadelerden kaçınılır"
+      - "Abartılı ifadeler kullanılmaz"
+
+    # Başlık kuralları
+    headings:
+      capitalize_first: true
+      avoid_all_caps: true
+      no_period_at_end: true
+
+  english:
+    # Kurumsal ton
+    tone:
+      - "Formal business language is used"
+      - "Active voice is preferred"
+      - "Clear and concise sentences"
+      - "Technical terms are explained"
+      - "Jargon is avoided"
+
+    headings:
+      title_case: true
+      no_period_at_end: true
+
+# Format kuralları
+format_rules:
+  # Başlık numaralandırma
+  headings:
+    numbering: true
+    format: "1.1.1"  # Örnek: 1., 1.1., 1.1.1.
+    max_depth: 3
+
+  # Sayfa düzeni
+  page:
+    size: "A4"
+    orientation: "portrait"
+    margins:
+      top_cm: 2.5
+      bottom_cm: 2.5
+      left_cm: 2.5
+      right_cm: 2.5
+
+  # Yazı tipi
+  fonts:
+    heading:
+      name: "Arial"
+      size_h1: 18
+      size_h2: 14
+      size_h3: 12
+      bold: true
+    body:
+      name: "Calibri"
+      size: 11
+      line_spacing: 1.15
+    caption:
+      name: "Calibri"
+      size: 9
+      italic: true
+
+  # Renkler
+  colors:
+    primary: "#1a365d"      # Koyu mavi - ana başlıklar
+    secondary: "#2c5282"    # Orta mavi - alt başlıklar
+    accent: "#3182ce"       # Açık mavi - vurgular
+    text: "#1a202c"         # Koyu gri - metin
+    muted: "#718096"        # Açık gri - ikincil metin
+    table_header: "#e2e8f0" # Tablo başlık arka planı
+    table_alt_row: "#f7fafc" # Tablo alternatif satır
+
+  # Sayı formatı (Türkçe)
+  numbers:
+    tr:
+      decimal_separator: ","
+      thousand_separator: "."
+      currency_symbol: "₺"
+      currency_position: "after"  # 1.000,00 ₺
+    en:
+      decimal_separator: "."
+      thousand_separator: ","
+      currency_symbol: "$"
+      currency_position: "before"  # $1,000.00
+
+  # Tarih formatı
+  date:
+    tr: "DD.MM.YYYY"
+    en: "YYYY-MM-DD"
+
+  # Tablo formatı
+  tables:
+    header_bold: true
+    header_background: true
+    alternate_rows: true
+    border_style: "single"
+
+  # Görsel formatı
+  images:
+    max_width_cm: 15
+    caption_below: true
+    numbered: true
+    format: "Şekil {n}: {caption}"
+
+# Doğrulama kuralları
+validation:
+  # Zorunlu bölümler
+  required_sections:
+    all:
+      - "kapak_sayfasi"
+    is_plani:
+      - "yonetici_ozeti"
+      - "finansal_projeksiyonlar"
+    proje_raporu:
+      - "yonetici_ozeti"
+      - "sonuclar"
+
+  # Minimum içerik
+  min_content:
+    yonetici_ozeti:
+      min_words: 100
+      max_words: 500
+    kisa_not:
+      max_pages: 2

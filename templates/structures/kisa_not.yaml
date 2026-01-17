@@ -1,0 +1,37 @@
+# Kısa Not Yapısı
+
+name: "Kısa Not"
+description: "Kısa özet dokümanı"
+
+sections:
+  - id: "baslik"
+    title: "Başlık"
+    required: true
+    level: 1
+    description: "Not başlığı ve konu"
+    min_words: 5
+    max_words: 50
+
+  - id: "ozet"
+    title: "Özet"
+    required: true
+    level: 1
+    description: "Konunun kısa özeti"
+    min_words: 50
+    max_words: 200
+
+  - id: "ana_noktalar"
+    title: "Ana Noktalar"
+    required: true
+    level: 1
+    description: "Önemli noktaların listesi"
+    min_words: 50
+    max_words: 300
+
+  - id: "sonuc"
+    title: "Sonuç"
+    required: true
+    level: 1
+    description: "Sonuç ve varsa aksiyon maddesi"
+    min_words: 30
+    max_words: 150

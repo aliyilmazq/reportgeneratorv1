@@ -1,0 +1,241 @@
+# Sektör Benchmark Verileri
+# Finansal doğrulama için referans değerler
+
+sectors:
+  e_ticaret:
+    description: "E-ticaret sektörü"
+    gross_margin:
+      min: 20
+      max: 60
+      typical: 35
+    net_margin:
+      min: 2
+      max: 20
+      typical: 8
+    growth_rate:
+      min: -20
+      max: 150
+      typical: 30
+    cac_ltv_ratio:
+      min: 0.1
+      max: 0.5
+      typical: 0.25
+    churn_rate:
+      min: 5
+      max: 40
+      typical: 20
+    conversion_rate:
+      min: 1
+      max: 5
+      typical: 2.5
+
+  saas:
+    description: "SaaS / Yazılım sektörü"
+    gross_margin:
+      min: 60
+      max: 90
+      typical: 75
+    net_margin:
+      min: 5
+      max: 30
+      typical: 15
+    growth_rate:
+      min: -10
+      max: 200
+      typical: 50
+    churn_rate:
+      min: 2
+      max: 15
+      typical: 5
+    ltv_cac_ratio:
+      min: 3
+      max: 10
+      typical: 5
+    arr_growth:
+      min: 20
+      max: 100
+      typical: 40
+
+  fintech:
+    description: "Fintech sektörü"
+    gross_margin:
+      min: 40
+      max: 80
+      typical: 60
+    net_margin:
+      min: 5
+      max: 25
+      typical: 12
+    growth_rate:
+      min: -10
+      max: 150
+      typical: 45
+    take_rate:
+      min: 0.5
+      max: 3
+      typical: 1.5
+
+  perakende:
+    description: "Perakende sektörü"
+    gross_margin:
+      min: 15
+      max: 45
+      typical: 28
+    net_margin:
+      min: 1
+      max: 10
+      typical: 4
+    growth_rate:
+      min: -15
+      max: 50
+      typical: 10
+    inventory_turnover:
+      min: 4
+      max: 20
+      typical: 8
+
+  uretim:
+    description: "Üretim sektörü"
+    gross_margin:
+      min: 20
+      max: 50
+      typical: 32
+    net_margin:
+      min: 3
+      max: 15
+      typical: 7
+    growth_rate:
+      min: -10
+      max: 40
+      typical: 12
+    capacity_utilization:
+      min: 60
+      max: 95
+      typical: 78
+
+  hizmet:
+    description: "Hizmet sektörü"
+    gross_margin:
+      min: 40
+      max: 80
+      typical: 55
+    net_margin:
+      min: 5
+      max: 25
+      typical: 12
+    growth_rate:
+      min: -10
+      max: 100
+      typical: 25
+    utilization_rate:
+      min: 60
+      max: 90
+      typical: 75
+
+  saglik:
+    description: "Sağlık sektörü"
+    gross_margin:
+      min: 30
+      max: 70
+      typical: 45
+    net_margin:
+      min: 5
+      max: 20
+      typical: 10
+    growth_rate:
+      min: 5
+      max: 50
+      typical: 18
+
+  egitim:
+    description: "Eğitim sektörü"
+    gross_margin:
+      min: 40
+      max: 75
+      typical: 55
+    net_margin:
+      min: 5
+      max: 25
+      typical: 12
+    growth_rate:
+      min: 0
+      max: 60
+      typical: 20
+    student_acquisition_cost:
+      min: 500
+      max: 5000
+      typical: 1500
+
+  default:
+    description: "Genel/Diğer sektörler"
+    gross_margin:
+      min: 10
+      max: 70
+      typical: 35
+    net_margin:
+      min: 1
+      max: 25
+      typical: 8
+    growth_rate:
+      min: -30
+      max: 150
+      typical: 20
+
+# Genel finansal kurallar
+financial_rules:
+  # Tutarlılık kuralları
+  consistency:
+    - name: "net_less_than_gross"
+      description: "Net kar marjı brüt kar marjından küçük olmalı"
+      severity: "error"
+
+    - name: "ebitda_less_than_revenue"
+      description: "EBITDA gelirden küçük olmalı"
+      severity: "error"
+
+    - name: "expenses_positive"
+      description: "Giderler pozitif olmalı"
+      severity: "error"
+
+  # Mantık kuralları
+  logic:
+    - name: "growth_sanity"
+      description: "Büyüme oranı makul aralıkta olmalı"
+      warning_threshold: 100
+      error_threshold: 300
+      severity: "warning"
+
+    - name: "margin_sanity"
+      description: "Marjinler sektör normlarında olmalı"
+      tolerance: 0.5  # %50 tolerans
+      severity: "warning"
+
+    - name: "breakeven_realistic"
+      description: "Başa baş süresi gerçekçi olmalı"
+      min_months: 6
+      max_months: 60
+      severity: "info"
+
+  # Çapraz referans kuralları
+  cross_reference:
+    - name: "summary_matches_detail"
+      description: "Özet ve detay bölümleri tutarlı olmalı"
+      sections: ["yonetici_ozeti", "finansal_projeksiyonlar"]
+      severity: "error"
+
+    - name: "target_matches_plan"
+      description: "Hedefler ve planlar tutarlı olmalı"
+      sections: ["hedefler", "operasyon_plani"]
+      severity: "warning"
+
+# Türkiye ekonomik parametreleri (2024)
+turkey_parameters:
+  inflation_rate: 64.77
+  policy_rate: 50.0
+  usd_try: 34.50
+  minimum_wage: 22104  # TL (brüt)
+  corporate_tax: 25  # %
+  vat_rate: 20  # % (genel)
+  social_security_employer: 22.5  # %
+  average_salary_white_collar: 85000  # TL (brüt aylık)
+  average_salary_blue_collar: 35000  # TL (brüt aylık)

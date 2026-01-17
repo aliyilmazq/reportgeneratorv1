@@ -1,0 +1,66 @@
+# Sunum Yapısı
+
+name: "Sunum"
+description: "Özet sunum dokümanı"
+
+sections:
+  - id: "kapak_sayfasi"
+    title: "Kapak"
+    required: true
+    auto_generate: true
+
+  - id: "gundem"
+    title: "Gündem"
+    required: true
+    level: 1
+    description: "Sunumun ana başlıkları ve akışı"
+    min_words: 30
+    max_words: 150
+
+  - id: "giris"
+    title: "Giriş"
+    required: true
+    level: 1
+    description: "Konuya giriş ve bağlam"
+    min_words: 50
+    max_words: 200
+
+  - id: "mevcut_durum"
+    title: "Mevcut Durum"
+    required: true
+    level: 1
+    description: "Mevcut durum analizi"
+    min_words: 80
+    max_words: 300
+
+  - id: "ana_noktalar"
+    title: "Ana Noktalar"
+    required: true
+    level: 1
+    description: "Sunumun kilit mesajları ve önemli noktalar"
+    min_words: 100
+    max_words: 400
+
+  - id: "veriler"
+    title: "Veriler ve Görseller"
+    required: false
+    level: 1
+    description: "Destekleyici veriler, grafikler ve görseller"
+    min_words: 50
+    max_words: 300
+
+  - id: "sonuc"
+    title: "Sonuç"
+    required: true
+    level: 1
+    description: "Sonuç ve çıkarımlar"
+    min_words: 50
+    max_words: 200
+
+  - id: "sonraki_adimlar"
+    title: "Sonraki Adımlar"
+    required: false
+    level: 1
+    description: "Aksiyon maddeleri ve sonraki adımlar"
+    min_words: 30
+    max_words: 150

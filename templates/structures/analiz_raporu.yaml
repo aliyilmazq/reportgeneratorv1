@@ -1,0 +1,82 @@
+# Analiz Raporu Yapısı
+
+name: "Analiz Raporu"
+description: "Veri analizi ve bulgular raporu"
+
+sections:
+  - id: "kapak_sayfasi"
+    title: "Kapak"
+    required: true
+    auto_generate: true
+
+  - id: "yonetici_ozeti"
+    title: "Yönetici Özeti"
+    required: true
+    level: 1
+    description: "Analizin özeti ve kilit bulgular"
+    min_words: 100
+    max_words: 400
+
+  - id: "giris"
+    title: "Giriş"
+    required: true
+    level: 1
+    description: "Analizin amacı, kapsamı ve araştırma soruları"
+    min_words: 100
+    max_words: 400
+
+  - id: "metodoloji"
+    title: "Metodoloji"
+    required: true
+    level: 1
+    description: "Kullanılan analiz yöntemleri ve veri kaynakları"
+    min_words: 150
+    max_words: 500
+
+  - id: "veri_analizi"
+    title: "Veri Analizi"
+    required: true
+    level: 1
+    description: "Detaylı veri analizi ve istatistikler"
+    min_words: 250
+    max_words: 1000
+
+  - id: "bulgular"
+    title: "Bulgular"
+    required: true
+    level: 1
+    description: "Ana bulgular ve keşifler"
+    min_words: 200
+    max_words: 800
+
+  - id: "tartisma"
+    title: "Tartışma"
+    required: false
+    level: 1
+    description: "Bulguların yorumu ve bağlamı"
+    min_words: 150
+    max_words: 500
+
+  - id: "sonuclar"
+    title: "Sonuçlar"
+    required: true
+    level: 1
+    description: "Analizden çıkan sonuçlar"
+    min_words: 100
+    max_words: 400
+
+  - id: "oneriler"
+    title: "Öneriler"
+    required: true
+    level: 1
+    description: "Bulgulara dayalı öneriler ve aksiyon maddeleri"
+    min_words: 100
+    max_words: 400
+
+  - id: "ekler"
+    title: "Ekler"
+    required: false
+    level: 1
+    description: "Detaylı tablolar, grafikler ve ham veriler"
+    min_words: 0
+    max_words: 1500

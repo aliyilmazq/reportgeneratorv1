@@ -1,0 +1,72 @@
+# Rapor Üretici - Genel Ayarlar
+
+app:
+  name: "Rapor Üretici"
+  version: "1.0.0"
+
+# Desteklenen dosya türleri
+supported_extensions:
+  documents:
+    - ".pdf"
+    - ".docx"
+    - ".doc"
+  spreadsheets:
+    - ".xlsx"
+    - ".xls"
+    - ".csv"
+  images:
+    - ".png"
+    - ".jpg"
+    - ".jpeg"
+    - ".gif"
+    - ".bmp"
+    - ".tiff"
+
+# Çıktı türleri
+output_types:
+  - id: "is_plani"
+    name: "İş Planı"
+    description: "Kapsamlı iş planı dokümanı"
+  - id: "proje_raporu"
+    name: "Proje Raporu"
+    description: "Proje durumu ve sonuç raporu"
+  - id: "sunum"
+    name: "Sunum"
+    description: "Özet sunum dokümanı"
+  - id: "on_fizibilite"
+    name: "Ön Fizibilite"
+    description: "Fizibilite değerlendirme raporu"
+  - id: "teknik_dok"
+    name: "Teknik Dokümantasyon"
+    description: "Teknik detay dokümanı"
+  - id: "analiz_raporu"
+    name: "Analiz Raporu"
+    description: "Veri analizi ve bulgular raporu"
+  - id: "kisa_not"
+    name: "Kısa Not / Özet"
+    description: "Kısa özet dokümanı"
+
+# Dil seçenekleri
+languages:
+  - id: "tr"
+    name: "Türkçe"
+  - id: "en"
+    name: "İngilizce"
+
+# Çıktı formatları
+output_formats:
+  - id: "docx"
+    name: "DOCX (Word)"
+    extension: ".docx"
+  - id: "pdf"
+    name: "PDF"
+    extension: ".pdf"
+  - id: "both"
+    name: "Her ikisi"
+    extensions: [".docx", ".pdf"]
+
+# İşleme ayarları
+processing:
+  chunk_size: 50  # Sayfa bazında parçalama
+  max_file_size_mb: 100
+  image_max_dimension: 1920

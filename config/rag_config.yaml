@@ -1,0 +1,193 @@
+# RAG (Retrieval-Augmented Generation) Sistem Konfigurasyonu
+# Version: 5.0
+
+# Embedding Ayarlari
+embedding:
+  # Model secenekleri: e5-large, e5-base, bge-m3, minilm
+  model: "intfloat/multilingual-e5-large"
+  dimension: 1024
+  batch_size: 32
+  max_length: 512
+  normalize: true
+  device: "auto"  # auto, cpu, cuda, mps
+  use_fp16: false
+  cache_embeddings: true
+
+  # Fallback model (ana model yuklenemezse)
+  fallback_model: "paraphrase-multilingual-MiniLM-L12-v2"
+  fallback_dimension: 384
+
+# Chunking Ayarlari
+chunking:
+  # Strateji: semantic, recursive, sliding_window
+  strategy: "semantic"
+  chunk_size: 1200
+  chunk_overlap: 240
+  min_chunk_size: 200
+  max_chunk_size: 2000
+
+  # Cumle ve paragraf koruma
+  preserve_sentences: true
+  preserve_paragraphs: true
+
+  # Yapisal eleman koruma
+  preserve_tables: true
+  preserve_lists: true
+  preserve_code_blocks: true
+
+  # Hiyerarsik chunking (parent-child)
+  use_hierarchical: true
+  parent_chunk_size: 2000
+  child_chunk_size: 500
+
+# Hybrid Search Ayarlari
+hybrid_search:
+  enabled: true
+
+  # Agirliklari (toplam 1.0 olmali)
+  semantic_weight: 0.6
+  bm25_weight: 0.4
+
+  # RRF (Reciprocal Rank Fusion)
+  use_rrf: true
+  rrf_k: 60
+
+  # Retrieval parametreleri
+  initial_fetch: 30
+  final_top_k: 5
+  min_score: 0.3
+
+# Re-ranking Ayarlari
+reranking:
+  enabled: true
+
+  # Model secenekleri: fast, balanced, multilingual
+  model_type: "multilingual"
+  # veya ozel model:
+  # custom_model: "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+
+  top_k_to_rerank: 20
+  min_score: 0.3
+  batch_size: 32
+
+# MMR (Maximal Marginal Relevance) Ayarlari
+mmr:
+  enabled: true
+  # Lambda: 1.0 = sadece relevance, 0.0 = sadece diversity
+  lambda: 0.7
+  diversity_threshold: 0.85
+
+# Query Optimization Ayarlari
+query_optimization:
+  # Strateji: auto, hyde, multi_query, decomposition, expansion
+  strategy: "auto"
+
+  # HyDE (Hypothetical Document Embeddings)
+  hyde_enabled: true
+  hyde_max_length: 150
+
+  # Multi-query
+  multi_query_count: 3
+
+# Context Management Ayarlari
+context:
+  # Token limitleri
+  max_tokens: 15000
+  reserved_for_response: 4000
+  safety_margin: 0.1
+
+  # Compression
+  compression_enabled: true
+  target_compression_ratio: 0.5
+
+  # Format
+  format_style: "numbered"  # numbered, markdown, simple
+  include_metadata: true
+
+# Cache Ayarlari
+caching:
+  enabled: true
+
+  # Query cache
+  query_cache_ttl_hours: 24
+  query_cache_max_entries: 1000
+
+  # Embedding cache
+  embedding_cache_ttl_days: 30
+  embedding_cache_max_entries: 5000
+
+  # Result cache
+  result_cache_ttl_minutes: 60
+  result_cache_max_entries: 500
+
+  # Redis (opsiyonel)
+  use_redis: false
+  redis_host: "localhost"
+  redis_port: 6379
+
+# Source Attribution Ayarlari
+source_attribution:
+  enabled: true
+  citation_style: "numeric"  # numeric, apa, footnote
+  min_confidence_score: 0.4
+  insert_inline_citations: true
+
+# Dokuman Isleme Ayarlari
+document_processing:
+  # Ozet olusturma
+  generate_summary: true
+  summary_max_length: 500
+
+  # Keyword extraction
+  extract_keywords: true
+  max_keywords: 20
+  use_tfidf: true
+
+  # Kategori tespiti
+  detect_category: true
+  available_categories:
+    - "finansal"
+    - "pazar_analizi"
+    - "teknik"
+    - "operasyonel"
+    - "yasal"
+    - "genel"
+
+# Vector Store Ayarlari
+vector_store:
+  # ChromaDB
+  persist_directory: ".chromadb"
+  collection_name: "report_docs"
+  parent_collection_name: "report_docs_parents"
+  distance_metric: "cosine"
+
+  # HNSW parametreleri
+  hnsw_space: "cosine"
+  hnsw_ef_construction: 200
+  hnsw_m: 16
+
+# BM25 Ayarlari
+bm25:
+  k1: 1.5
+  b: 0.75
+  use_stemming: true
+  remove_stopwords: true
+  min_token_length: 2
+
+# Performans Ayarlari
+performance:
+  # Paralel islem
+  max_workers: 4
+  batch_processing: true
+
+  # Timeout'lar (saniye)
+  embedding_timeout: 60
+  search_timeout: 30
+  rerank_timeout: 30
+
+# Loglama
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_queries: false
+  log_results: false
+  log_cache_stats: true

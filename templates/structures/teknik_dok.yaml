@@ -1,0 +1,82 @@
+# Teknik Dokümantasyon Yapısı
+
+name: "Teknik Dokümantasyon"
+description: "Teknik detay dokümanı"
+
+sections:
+  - id: "kapak_sayfasi"
+    title: "Kapak"
+    required: true
+    auto_generate: true
+
+  - id: "giris"
+    title: "Giriş"
+    required: true
+    level: 1
+    description: "Dokümanın amacı ve kapsamı"
+    min_words: 100
+    max_words: 300
+
+  - id: "sistem_mimarisi"
+    title: "Sistem Mimarisi"
+    required: true
+    level: 1
+    description: "Genel mimari, bileşenler ve ilişkiler"
+    min_words: 200
+    max_words: 800
+
+  - id: "teknik_gereksinimler"
+    title: "Teknik Gereksinimler"
+    required: true
+    level: 1
+    description: "Donanım, yazılım ve altyapı gereksinimleri"
+    min_words: 150
+    max_words: 500
+
+  - id: "kurulum_rehberi"
+    title: "Kurulum Rehberi"
+    required: false
+    level: 1
+    description: "Adım adım kurulum talimatları"
+    min_words: 150
+    max_words: 600
+
+  - id: "yapilandirma"
+    title: "Yapılandırma"
+    required: false
+    level: 1
+    description: "Yapılandırma seçenekleri ve ayarlar"
+    min_words: 100
+    max_words: 500
+
+  - id: "kullanim_kilavuzu"
+    title: "Kullanım Kılavuzu"
+    required: true
+    level: 1
+    description: "Sistemin nasıl kullanılacağı"
+    min_words: 200
+    max_words: 800
+
+  - id: "api_referansi"
+    title: "API Referansı"
+    required: false
+    level: 1
+    description: "API endpoint'leri ve kullanım örnekleri"
+    min_words: 100
+    max_words: 1000
+
+  - id: "sorun_giderme"
+    title: "Sorun Giderme"
+    required: false
+    level: 1
+    description: "Yaygın sorunlar ve çözümleri"
+    min_words: 100
+    max_words: 500
+
+  - id: "ekler"
+    title: "Ekler"
+    required: false
+    level: 1
+    description: "Ek teknik detaylar ve referanslar"
+    min_words: 0
+    max_words: 1000

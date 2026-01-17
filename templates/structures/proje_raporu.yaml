@@ -1,0 +1,82 @@
+# Proje Raporu Yapısı
+
+name: "Proje Raporu"
+description: "Proje durumu ve sonuç raporu"
+
+sections:
+  - id: "kapak_sayfasi"
+    title: "Kapak"
+    required: true
+    auto_generate: true
+
+  - id: "yonetici_ozeti"
+    title: "Yönetici Özeti"
+    required: true
+    level: 1
+    description: "Projenin kısa özeti, durum ve ana bulgular"
+    min_words: 100
+    max_words: 400
+
+  - id: "proje_tanimi"
+    title: "Proje Tanımı"
+    required: true
+    level: 1
+    description: "Proje amacı, kapsamı ve hedefleri"
+    min_words: 150
+    max_words: 500
+
+  - id: "metodoloji"
+    title: "Metodoloji"
+    required: true
+    level: 1
+    description: "Kullanılan yöntemler ve yaklaşımlar"
+    min_words: 100
+    max_words: 400
+
+  - id: "proje_ilerleme"
+    title: "Proje İlerlemesi"
+    required: true
+    level: 1
+    description: "Tamamlanan işler, mevcut durum, zaman çizelgesi"
+    min_words: 200
+    max_words: 600
+
+  - id: "bulgular"
+    title: "Bulgular"
+    required: true
+    level: 1
+    description: "Elde edilen sonuçlar ve veriler"
+    min_words: 200
+    max_words: 800
+
+  - id: "sorunlar_riskler"
+    title: "Sorunlar ve Riskler"
+    required: false
+    level: 1
+    description: "Karşılaşılan sorunlar ve potansiyel riskler"
+    min_words: 100
+    max_words: 400
+
+  - id: "sonuclar"
+    title: "Sonuçlar"
+    required: true
+    level: 1
+    description: "Proje sonuçları ve değerlendirme"
+    min_words: 150
+    max_words: 500
+
+  - id: "oneriler"
+    title: "Öneriler"
+    required: false
+    level: 1
+    description: "Gelecek adımlar ve öneriler"
+    min_words: 100
+    max_words: 400
+
+  - id: "ekler"
+    title: "Ekler"
+    required: false
+    level: 1
+    description: "Destekleyici dokümanlar"
+    min_words: 0
+    max_words: 1500

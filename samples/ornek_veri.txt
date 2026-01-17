@@ -1,0 +1,32 @@
+Turkiye Ekonomi Raporu 2024 - Ozet Veriler
+==========================================
+
+Makroekonomik Gostergeler:
+- GSYH Buyume Orani: %4.5
+- Enflasyon (TUFE): %65.2
+- Issizlik Orani: %9.8
+- Cari Acik/GSYH: -%4.2
+- Butce Acigi/GSYH: -%5.3
+
+Sektor Bazli Performans:
+1. Sanayi Sektoru: %6.2 buyume
+2. Hizmetler Sektoru: %5.1 buyume
+3. Tarim Sektoru: -%1.3 daralma
+4. Insaat Sektoru: %2.8 buyume
+
+Dis Ticaret Verileri:
+- Ihracat: 256.5 milyar USD
+- Ithalat: 362.3 milyar USD
+- Dis Ticaret Acigi: 105.8 milyar USD
+- Ihracatin Ithalati Karsilama Orani: %70.8
+
+Finansal Gostergeler:
+- Merkez Bankasi Politika Faizi: %50
+- 10 Yillik Tahvil Faizi: %28.5
+- USD/TRY Kuru: 32.50
+- EUR/TRY Kuru: 35.20
+- BIST 100 Endeksi: 9,850 puan
+
+Turkiye'nin 2024 yilinda ekonomik toparlanma surecinde onemli adimlar attigi gorulmektedir.
+Enflasyonla mucadele programi kapsaminda sikiastirici para politikasi uygulanmaktadir.
+Cari acik problemi devam etmekle birlikte, ihracat performansi olumlu seyretmektedir.

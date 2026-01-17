@@ -26,6 +26,15 @@ from datetime import datetime
 # Proje kök dizinini path'e ekle
 sys.path.insert(0, str(Path(__file__).parent))
 
+# .env dosyasini yukle (varsa)
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+except ImportError:
+    pass  # python-dotenv yuklu degil, devam et
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
